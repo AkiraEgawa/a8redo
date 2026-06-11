@@ -1,0 +1,23 @@
+#ifndef QUEUE_H
+#define QUEUE_H
+
+#include <stdio.h>
+#include <string.h>
+
+// This is the .h file for the storage
+
+// I want there to be several things?
+
+// Stores only 10 items (use an array char* history[10], as this holds 10 char
+// pointers)
+typedef struct Queue {
+  char *history[10];
+  int size;
+} Queue;
+
+// define a push and peak method
+void initQueue(Queue *q);
+void push(Queue *q, char *command);
+char* peek(Queue *q, int index);
+
+#endif

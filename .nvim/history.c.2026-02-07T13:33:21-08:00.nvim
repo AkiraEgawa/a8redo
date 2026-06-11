@@ -1,0 +1,49 @@
+#include "history.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+
+void initQueue(Queue *q) {
+  // history is technically allocated already
+  q->size = 0;
+}
+// I don't wanna use POSIX, so gotta make own stdup
+char *strdup(const char *s) {
+  if (!s)
+    return NULL;
+  size_t len = strlen(s);
+  char *copy = malloc(len);
+  if (!copy)
+    return NULL;
+  memcpy(copy, s, len);
+  return copy;
+}
+
+void push(Queue *q, char *command) {
+  if (q->size != 10) {
+    q->history[q->size] = strdup(command);
+    q->size++;
+  } else {
+    free(q->history[0]);
+    // need to remove first item, aka shift everything over 1
+    for (int i = 0; i < (q->size) - 1; i++) {
+      q->history[i] = q->history[i + 1];
+      q->history[q->size - 1] = strdup(command);
+    }
+  }
+}
+
+char* peek(Queue *q, int index) {
+  if (index >= q->size) {
+    printf("Impossible");
+    return 0;
+  }
+  return (q->history[index]);
+}
+
+void delete(Queue *q) {
+  for (int i = 0; i < q->size; i++) {
+    free(q->history[i]);
+  }
+}

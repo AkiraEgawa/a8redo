@@ -1,0 +1,41 @@
+// This is the .h file for the queue
+
+#ifndef QUEUE_H
+#define QUEUE_H
+
+#include <stddef.h>
+
+typedef struct Node{
+  char* command; // This is the command
+  struct Node* next;
+} Node;
+
+typedef struct Queue{
+  Node* front;
+  Node* rear;
+  int size;
+} Queue;
+
+void initQueue(Queue* q){
+  q->front = q->rear = NULL;
+  q->size = 0;
+}
+
+void push(Queue* q, char* command){
+  Node* newNode = malloc(sizeof(Node));
+  if(!newNode){
+    perror("malloc");
+    return;
+  }
+  newNode->command = command;
+  newNode->next = NULL;
+
+  // This queue stores 10 items, so manage that
+  if(q->size < 10){
+    q->rear->next = newNode;
+  }
+  else{
+    // more than 10 items
+    
+  }
+}

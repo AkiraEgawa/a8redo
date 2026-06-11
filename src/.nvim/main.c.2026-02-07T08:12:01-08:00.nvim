@@ -1,0 +1,56 @@
+#include <stdio.h>
+#include <unistd.h>
+
+int main() {
+  // This is a test statement, to show compilation
+  printf("Hello World\n");
+  char dirBuff[100]; // if your directory is over 100 characters, that's on
+  size_t size;
+  // you
+  /*
+  while(1){
+    // Phase 1
+    remove zombs (For the sake my sanity, let's skip this for now
+    print prompt and directory
+  */
+  // print prompt and directory
+  size = pathconf(".", _PC_PATH_MAX);
+  getcwd(dirBuff, size);
+  write(1, dirBuff, size);
+  /*
+    // Phase 2
+    read input
+    if read interrupted(INTERRUPT FLAG):
+      continue
+    if input empty:
+      continue
+
+    otherwise, everything is fine, so ignore it
+    // Phase 3
+    if !! or !n:
+      validate input
+      run the command
+    add command to the history (use stack or smth)
+    It's a queue dummy
+
+    // Phase 4
+    strtok_r input
+    replace last item with \0
+    detect &
+
+    //Phase 5
+    if internal command:
+      run
+      continue
+
+    pid = fork
+
+    if child:
+      exec
+    if parent:
+      if foreground:
+        wait for that child
+  }
+  */
+  return 0;
+}

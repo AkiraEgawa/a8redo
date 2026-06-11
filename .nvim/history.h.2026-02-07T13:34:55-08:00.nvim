@@ -1,0 +1,23 @@
+#ifndef STACK_H
+#define STACK_H
+
+#include <stdio.h>
+#include <string.h>
+
+// This is the .h file for the storage
+
+// I want there to be several things?
+
+// Stores only 10 items (use an array char* history[10], as this holds 10 char
+// pointers)
+typedef struct Stack {
+  char *history[10];
+  int size;
+} Stack;
+
+// define a push and peak method
+void initStack(Stack *s);
+void push(Stack *s, char *command);
+char *peek(Stack *s, int index);
+
+#endif

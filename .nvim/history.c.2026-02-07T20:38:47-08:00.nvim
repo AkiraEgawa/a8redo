@@ -1,0 +1,50 @@
+#include "history.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+
+void initStack(Stack *s) {
+  // history is technically allocated already
+  s->size = 0;
+  s->total = -1;
+}
+// I don't wanna use POSIX, so gotta make own stdup
+char *strdup(const char *s) {
+  size_t len = strlen(s) + 1;
+  char *copy = malloc(len);
+  if (!copy)
+    return NULL;
+  memcpy(copy, s, len);
+  return copy;
+}
+
+// Dear self, why did you make this a queue??? it's a stack
+void push(Stack *s, char *command) {
+  s->total++;
+  if (s->size != 10) {
+    s->history[s->size] = strdup(command);
+    s->size++;
+  } else {
+    free(s->history[0]);
+    // need to remove first item, aka shift everything over 1
+    for (int i = 0; i < (s->size) - 1; i++) {
+      s->history[i] = s->history[i + 1];
+    }
+    s->history[s->size - 1] = strdup(command);
+  }
+}
+
+char *peek(Stack *s, int index) {
+  if (index >= s->size) {
+    printf("Impossible");
+    return 0;
+  }
+  return (s->history[index]);
+}
+
+void dealloStack(Stack *s) {
+  for (int i = 0; i < s->size; i++) {
+    free(s->history[i]);
+  }
+}

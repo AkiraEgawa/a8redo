@@ -1,0 +1,46 @@
+#include <stdio.h>
+
+int main(){
+  printf("Hello World\n");
+  /*
+  while(1){
+    // Phase 1
+    remove zombs
+    print prompt and directory
+
+    // Phase 2
+    read input
+    if read interrupted(INTERRUPT FLAG):
+      continue
+    if input empty:
+      continue
+    
+    otherwise, everything is fine, so ignore it
+    // Phase 3
+    if !! or !n:
+      validate input
+      run the command
+    add command to the history (use stack or smth)
+    It's a queue dummy
+
+    // Phase 4
+    strtok_r input
+    replace last item with \0
+    detect &
+
+    //Phase 5
+    if internal command:
+      run
+      continue
+
+    pid = fork
+
+    if child:
+      exec
+    if parent:
+      if foreground:
+        wait for that child
+  }
+  */
+  return 0;
+}

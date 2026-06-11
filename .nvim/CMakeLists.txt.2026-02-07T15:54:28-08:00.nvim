@@ -1,0 +1,32 @@
+cmake_minimum_required(VERSION 3.14)
+
+project(myShell C CXX)
+
+add_executable(myShell src/main.c src/history.c)
+set_target_properties(myShell PROPERTIES C_STARNDARD 11 C_STANDARD_REQUIRED ON)
+include_directories(include)
+target_compile_options(myShell PRIVATE
+  -fsanitize=address
+  -g
+)
+target_link_options(myShell PRIVATE
+  -fsanitize=address
+)
+# GoogleTest requires at least C++14
+set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+include(FetchContent)
+FetchContent_Declare(
+  googletest
+  DOWNLOAD_EXTRACT_TIMESTAMP false
+  URL https://github.com/google/googletest/archive/refs/tags/v1.14.0.zip)
+FetchContent_MakeAvailable(googletest)
+
+enable_testing()
+
+add_executable(shell_test gtest/shell_test.cpp)
+target_link_libraries(shell_test GTest::gtest_main)
+
+include(GoogleTest)
+gtest_discover_tests(shell_test)

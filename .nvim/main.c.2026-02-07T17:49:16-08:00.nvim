@@ -1,0 +1,245 @@
+#define _POSIX_C_SOURCE 200809L
+#include "history.h"
+#include "msgs.h"
+#include <limits.h>
+#include <pwd.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+
+#define MAX_WORDS 100
+
+int split(char *input, char *words[], int max_words) {
+  char *saveptr;
+  int count = 0;
+
+  char *token = strtok_r(input, " \t\n", &saveptr);
+  while (token != NULL && count < max_words) {
+    words[count++] = token;
+    token = strtok_r(NULL, " \t\n", &saveptr);
+  }
+  return count;
+}
+
+void printHelp(char *type) {
+  char *types[] = {"help", "extern", "exit", "pwd", "cd", "history"};
+  char *msg;
+  char defMsg[256];
+  for (int i = 0; i < 6; i++) {
+    if (strcmp(type, types[i]) == 0) {
+      switch (i) {
+      case 0:
+        msg = FORMAT_MSG("help", HELP_HELP_MSG);
+        break;
+      case 1:
+        msg = FORMAT_MSG("extern", EXTERN_HELP_MSG);
+        break;
+      case 2:
+        msg = FORMAT_MSG("exit", EXIT_HELP_MSG);
+        break;
+      case 3:
+        msg = FORMAT_MSG("pwd", PWD_HELP_MSG);
+        break;
+      case 4:
+        msg = FORMAT_MSG("cd", CD_HELP_MSG);
+        break;
+      case 5:
+        msg = FORMAT_MSG("history", HISTORY_HELP_MSG);
+        break;
+      default:
+        snprintf(defMsg, sizeof(defMsg),
+                 "%s: external command or application\n", type);
+        write(1, defMsg, strlen(defMsg));
+        return;
+        break;
+      }
+      write(1, msg, strlen(msg));
+      return;
+    }
+  }
+  return;
+}
+
+int main() {
+  Stack *cmdHist = malloc(sizeof(Stack));
+  initStack(cmdHist);
+  struct passwd *pw = getpwuid(getuid());
+  char dirBuff[100]; // if your directory is over 100 characters, that's on
+  char prev_dir[PATH_MAX] = "";
+  // you
+  while (1) {
+    /*
+    // Phase 1
+    remove zombs (For the sake my sanity, let's skip this for now
+    print prompt and directory
+    */
+    // print prompt and directory
+    if (getcwd(dirBuff, sizeof(dirBuff)) == NULL) {
+      const char *msg = FORMAT_MSG("shell", GETCWD_ERROR_MSG);
+      write(1, msg, strlen(msg));
+      return 0;
+    }
+    write(1, dirBuff, strlen(dirBuff));
+    write(1, "$ ",
+          2); // don't print a newline, they have to type command on that
+    /*
+      // Phase 2
+      read input
+      if read interrupted(INTERRUPT FLAG):
+        continue
+      if input empty:
+        continue
+    */
+    // Read input
+    char readBuff[256];
+    char modStrBuff[256];
+    ssize_t n = read(1, readBuff, sizeof(readBuff));
+    if (n <= 0) {
+      // We messed up
+      return 0;
+    } else {
+      readBuff[n - 1] = '\0';
+    }
+    int len =
+        snprintf(modStrBuff, sizeof(modStrBuff), "You printed: %s\n", readBuff);
+    write(1, modStrBuff, len);
+
+    /*
+
+      otherwise, everything is fine, so ignore it
+      // Phase 3
+      if !! or !n:
+        validate input
+        run the command
+      add command to the history (use stack or smth)
+      It's a queue dummy
+    */
+    // Check if it's !! or !n
+    if (readBuff[0] == '!') {
+      if (readBuff[1] == '!') {
+        printf("!! Detected\n");
+        continue;
+      } else {
+        printf("!n Detected\n");
+        continue;
+      }
+    }
+
+    push(cmdHist, readBuff);
+    printf("First item in history is: %s\n", peek(cmdHist, cmdHist->size - 1));
+    /*
+      // Phase 4
+      strtok_r input
+      replace last item with \0
+      detect &
+    */
+    // tokenize
+    char *command[MAX_WORDS];
+    int count = split(readBuff, command, MAX_WORDS);
+    for (int i = 0; i < count; i++) {
+      size_t len = strlen(command[i]);
+      write(1, command[i], len);
+      write(1, "\n", 1);
+    }
+    /*
+
+      //Phase 5
+      if internal command:
+        run
+        continue
+    */
+
+    // exit
+    if (strcmp(command[0], "exit") == 0) {
+      if (count > 1) {
+        char *msg = FORMAT_MSG("exit", TMA_MSG);
+        write(1, msg, strlen(msg));
+        continue;
+      }
+      break;
+    }
+
+    // pwd
+    if (strcmp(command[0], "pwd") == 0) {
+      if (count > 1) {
+        char *msg = FORMAT_MSG("pwd", TMA_MSG);
+        write(1, msg, strlen(msg));
+        continue;
+      }
+      if (getcwd(dirBuff, sizeof(dirBuff)) == NULL) {
+        const char *msg = FORMAT_MSG("shell", GETCWD_ERROR_MSG);
+        write(1, msg, strlen(msg));
+        continue;
+      }
+      write(1, dirBuff, strlen(dirBuff));
+      write(1, "\n", 1);
+      continue;
+    }
+
+    // cd
+    if (strcmp(command[0], "cd") == 0) {
+      char cwd[PATH_MAX];
+      char target[PATH_MAX];
+      if (getcwd(cwd, sizeof(cwd)) == NULL) {
+        const char *msg = FORMAT_MSG("shell", GETCWD_ERROR_MSG);
+        write(1, msg, strlen(msg));
+      } else if (count > 2) {
+        char *msg = FORMAT_MSG("cd", TMA_MSG);
+        write(1, msg, strlen(msg));
+        continue;
+      } else if (count == 1) {
+        strcpy(prev_dir, cwd);
+        strcpy(target, pw->pw_dir);
+      } else if (strcmp(command[1], "-") == 0) {
+        strcpy(target, prev_dir);
+        strcpy(prev_dir, cwd);
+      } else {
+        strcpy(prev_dir, cwd);
+        // No special, so just regular
+        strcpy(target, command[1]);
+      }
+      if (chdir(target) == -1) {
+        char *msg = FORMAT_MSG("cd", CHDIR_ERROR_MSG);
+        write(1, msg, strlen(msg));
+        continue;
+      }
+      continue;
+    }
+
+    // help
+    if (strcmp(command[0], "help") == 0) {
+      if (count > 2) {
+        char *msg = FORMAT_MSG("help", TMA_MSG);
+        write(1, msg, strlen(msg));
+        continue;
+      }
+      if (count == 2) {
+        printHelp(command[1]);
+        continue;
+      } else {
+        char msg[256];
+        char *addon[] = {HELP_HELP_MSG, EXTERN_HELP_MSG, EXIT_HELP_MSG,
+                         PWD_HELP_MSG,  CD_HELP_MSG,     HISTORY_HELP_MSG};
+        char *prefix[] = {"help", "extern", "exit", "pwd", "cd", "history"};
+        for (int i = 0; i < 6; i++) {
+          snprintf(msg, sizeof(msg), "%s: %s\n", prefix[i], addon[i]);
+          write(1, msg, sizeof(msg));
+        }
+        continue;
+      }
+    }
+    /*
+      pid = fork
+
+      if child:
+        exec
+      if parent:
+        if foreground:
+          wait for that child
+      */
+  }
+  dealloStack(cmdHist);
+  free(cmdHist); // Yes, we need this
+  return 0;
+}
