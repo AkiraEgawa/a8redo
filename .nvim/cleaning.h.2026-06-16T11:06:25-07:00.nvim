@@ -1,0 +1,9 @@
+#pragma once
+
+// Splits an input into words using strtok_r
+int split(char *input, char *words[], int max_words);
+
+// Trims each string of whitespace
+void trim(char *s);
+
+int readInput(char*, char*, bool*);

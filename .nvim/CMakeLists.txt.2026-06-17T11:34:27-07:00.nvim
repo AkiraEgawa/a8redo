@@ -9,7 +9,7 @@ add_executable(shell
   src/executeCommand.c
   src/external.c
   src/history.c
-  src/tokenize.c
+  src/tokenize/c
 )
 set_target_properties(shell PROPERTIES C_STARNDARD 11 C_STANDARD_REQUIRED ON)
 include_directories(include)

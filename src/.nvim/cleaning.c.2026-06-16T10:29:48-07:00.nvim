@@ -1,0 +1,40 @@
+#define _POSIX_C_SOURCE 200809L
+#define GNU_SOURCE
+#include "cleaning.h"
+#include <ctype.h>
+#include <string.h>
+
+int split(char *input, char *words[], int max_words) {
+  char *saveptr;
+  int count = 0;
+
+  char *token = strtok_r(input, " \t\n", &saveptr);
+  while (token != NULL && count < max_words) {
+    words[count++] = token;
+    token = strtok_r(NULL, " \t\n", &saveptr);
+  }
+  return count;
+}
+
+void trim(char *s) {
+  int i;
+  int begin = 0;
+  int end = strlen(s) - 1;
+  if (end < 0)
+    return;
+
+  while (isspace((unsigned char)s[begin])) {
+    // Find where the string starts
+    begin++;
+  }
+
+  while ((end >= begin) && isspace((unsigned char)s[end])) {
+    // Find where the string ends
+    end--;
+  }
+
+  for (i = begin; i <= end; i++) {
+    s[i - begin] = s[i];
+  }
+  s[i - begin] = '\0';
+}

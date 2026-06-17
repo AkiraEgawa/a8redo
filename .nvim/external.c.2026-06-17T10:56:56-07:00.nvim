@@ -1,0 +1,125 @@
+#include <string.h>
+#include "msgs.h"
+#include <unistd.h>
+#include <limits.h>
+#include <pwd.h>
+#include <stdio.h>
+#define PATH_MAX 4096
+
+void printHelp(char *type) {
+  char *types[] = {"help", "extern", "exit", "pwd", "cd", "history"};
+  char *msg;
+  char defMsg[256];
+  for (int i = 0; i < 6; i++) {
+    if (strcmp(type, types[i]) == 0) {
+      switch (i) {
+      case 0:
+        msg = FORMAT_MSG("help", HELP_HELP_MSG);
+        break;
+      case 1:
+        msg = FORMAT_MSG("extern", EXTERN_HELP_MSG);
+        break;
+      case 2:
+        msg = FORMAT_MSG("exit", EXIT_HELP_MSG);
+        break;
+      case 3:
+        msg = FORMAT_MSG("pwd", PWD_HELP_MSG);
+        break;
+      case 4:
+        msg = FORMAT_MSG("cd", CD_HELP_MSG);
+        break;
+      case 5:
+        msg = FORMAT_MSG("history", HISTORY_HELP_MSG);
+        break;
+      default:
+        snprintf(defMsg, sizeof(defMsg),
+                 "%s: external command or application\n", type);
+        write(1, defMsg, strlen(defMsg));
+        return;
+        break;
+      }
+      write(1, msg, strlen(msg));
+      return;
+    }
+  }
+  snprintf(defMsg, sizeof(defMsg), "%s: external command or application\n",
+           type);
+  write(1, defMsg, strlen(defMsg));
+
+  return;
+}
+
+int handleExit(char* command[], int count){
+  if(count > 1){
+    char* msg = FORMAT_MSG("exit", TMA_MSG);
+    write(2, msg, strlen(msg));
+    return 1;
+  }
+  return 2;
+}
+
+int handlePwd(char* command[], int count, char* dirBuff){
+  if(count > 1){
+    char* msg = FORMAT_MSG("pwd", TMA_MSG);
+    write(2, msg, strlen(msg));
+    return 1;
+  }
+  if (getcwd(dirBuff, sizeof(dirBuff)) == NULL){
+    const char* msg = FORMAT_MSG("shell", GETCWD_ERROR_MSG);
+    write(2, msg, strlen(msg));
+    return 1;
+  }
+  write(1, dirBuff, strlen(dirBuff));
+  write(1, "\n", 1);
+  return 1;
+}
+
+int handleCd(char* command[], int count, struct passwd* pw, char prev_dir[]){
+  char cwd[PATH_MAX];
+  char target[PATH_MAX];
+  if(getcwd(cwd, sizeof(cwd))==NULL){
+    const char* msg = FORMAT_MSG("shell", GETCWD_ERROR_MSG);
+    write(2, msg, strlen(msg));
+  } else if (count > 2) {
+    char* msg = FORMAT_MSG("cd", TMA_MSG);
+    write(2, msg, strlen(msg));
+    return 1;
+  } else if(count == 1){
+    strcpy(prev_dir, cwd);
+    strcpy(target, pw->pw_dir);
+  } else if(strcmp(command[1], "-") == 0) {
+    strcpy(target, prev_dir);
+    strcpy(prev_dir, cwd);
+  } else if(command[1][0] == '~') {
+    strcpy(prev_dir, cwd);
+    if (strlen(command[1]) > 1){
+      snprintf(target, sizeof(target), "%s%s", pw->pw_dir, command[1]+1);
+    } else{
+      strcpy(target, pw->pw_dir);
+    }
+  } else{
+    strcpy(prev_dir, cwd);
+    strcpy(target, command[1]);
+  }
+  if(chdir(target) == -1){
+    char* msg = FORMAT_MSG("msg", CHDIR_ERROR_MSG);
+    write(2, msg, strlen(msg));
+    return 1;
+  }
+  return 1;
+}
+
+int handleHelp(char* command[], int count){
+  if(count > 2){
+    char* msg = FORMAT_MSG("help", TMA_MSG);
+    write(1, msg, strlen(msg));
+    return 1;
+  }
+  if (count == 2){
+    printHelp(command[1]);
+    return 1;
+  } else{
+    char msg[256];
+    char* addon[] = {HELP_HELP_MSG, EXTERN_HELP_MSG, EXIT_HELP_MSG, PWD_HELP_MSG,  CD_HELP_MSG,     HISTORY_HELP_MSG};
+  }
+}

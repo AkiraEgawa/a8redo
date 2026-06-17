@@ -1,0 +1,78 @@
+#define _POSIX_C_SOURCE 200809L
+#define GNU_SOURCE
+#include "cleaning.h"
+#include "msgs.h"
+#include "callback.h"
+#include "tokenize.h"
+#include "external.h"
+#include "executeCommand.h"
+#include <pwd.h>
+#include <ctype.h>
+#include <limits.h>
+#include <signal.h>
+#include <stdbool.h>
+#include <stdio.h>
+#include <string.h>
+#include <unistd.h>
+#include <wait.h>
+#include <stdlib.h>
+
+int MAX_WORDS = 500;
+
+void sigint_handler(int signum) {
+  const char msg[] = "\nShell interrupted (CTRL-C)\n";
+  write(1, msg, sizeof(msg));
+
+  const char help_msg[] = "help: display available commands\n"
+                          "cd: change directory\n"
+                          "pwd: print working directory\n"
+                          "exit: exit the shell\n"
+                          "history: display command history\n";
+
+  write(1, help_msg, sizeof(help_msg));
+
+  char cwd[PATH_MAX];
+  if (getcwd(cwd, sizeof(cwd)) != NULL) {
+    write(1, cwd, strlen(cwd));
+    write(1, "$ ", 2);
+  }
+}
+
+int main() {
+  struct sigaction sa;
+  sa.sa_handler = sigint_handler;
+  sigemptyset(&sa.sa_mask);
+  sigaction(SIGINT, &sa, NULL);
+
+  // Define variables to be passed in
+  char cwd[500];
+  char readBuff[256];
+  char prev_dir[4096] = "";
+  bool background;
+  struct passwd* pw = getpwuid(getuid());
+  History *cmdHist = malloc(sizeof(History));
+  initHistory(cmdHist);
+
+  while (1) {
+    if(readInput(readBuff, cwd, &background)) continue;
+    if(detectCallback(readBuff, cmdHist)) continue;
+    push(cmdHist, readBuff);
+    char* command[MAX_WORDS];
+    int count = split(readBuff, command, MAX_WORDS);
+    int result = externalCommand(command, count, cwd, pw, prev_dir, cmdHist);
+    if(result == 2) break;
+    if(result == 1) continue;
+    if (!result){
+      int 東西 = executeCommand(command, count, background);
+      switch(東西){
+        case 0:
+          _exit(1);
+        case 1:
+          continue;
+      }
+    }
+  }
+  dealloStack(cmdHist);
+  free(cmdHist);
+  return 0;
+}

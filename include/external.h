@@ -1,0 +1,5 @@
+#include "history.h"
+#include <pwd.h>
+
+int externalCommand(char *command[], int count, char *dirBuff,
+                    struct passwd *pw, char prev_dir[], History *cmdHist);

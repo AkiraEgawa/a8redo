@@ -1,0 +1,81 @@
+#define _POSIX_C_SOURCE 200809L
+#define GNU_SOURCE
+#include "cleaning.h"
+#include <ctype.h>
+#include <string.h>
+#include "msgs.h"
+#include <unistd.h>
+#include <stdbool.h>
+
+int split(char *input, char *words[], int max_words) {
+  char *saveptr;
+  int count = 0;
+
+  char *token = strtok_r(input, " \t\n", &saveptr);
+  while (token != NULL && count < max_words) {
+    words[count++] = token;
+    token = strtok_r(NULL, " \t\n", &saveptr);
+  }
+  return count;
+}
+
+void trim(char *s) {
+  int i;
+  int begin = 0;
+  int end = strlen(s) - 1;
+  if (end < 0)
+    return;
+
+  while (isspace((unsigned char)s[begin])) {
+    // Find where the string starts
+    begin++;
+  }
+
+  while ((end >= begin) && isspace((unsigned char)s[end])) {
+    // Find where the string ends
+    end--;
+  }
+
+  for (i = begin; i <= end; i++) {
+    s[i - begin] = s[i];
+  }
+  s[i - begin] = '\0';
+}
+
+void getDirectory(char* dirBuff){
+  if (getcwd(dirBuff, sizeof(dirBuff)) == NULL){
+    const char* msg = FORMAT_MSG("shell", GETCWD_ERROR_MSG);
+    write(1, msg, strlen(msg));
+    return;
+  }
+  write(1, dirBuff, strlen(dirBuff));
+  write(1, "$ ", 2);
+}
+
+int readInput(char* readBuff, char* dirBuff, bool* background){
+  // returns 1 if it needs to restart
+  getDirectory(dirBuff);
+  ssize_t n = read(0, readBuff, sizeof(readBuff));
+  if (n <= 0) {
+    return 1;
+  }
+  else{
+    readBuff[n-1] = '\0';
+  }
+
+  trim(readBuff);
+
+  if (readBuff[strlen(readBuff)-1] == '&') {
+    *background = true;
+    readBuff[strlen(readBuff)-1]='\0';
+  }
+  else {
+    *background = false;
+  }
+
+  // Detect if input is supposed to run in background
+  if (strlen(readBuff) == 0)
+    return 1;
+
+  return 0;
+}

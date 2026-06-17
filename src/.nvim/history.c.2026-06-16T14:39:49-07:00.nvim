@@ -1,0 +1,26 @@
+#include "history.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+
+void initStack(Stack* s){
+  s->size = 0;
+  s->total = -1;
+}
+
+char* strdup(const char* s) {
+  size_t len = strlen(s) + 1;
+  char* copy = malloc(len);
+  if(!copy) return NULL;
+  memcpy(copy, s, len);
+  return copy;
+}
+
+void push(Stack* s, char* command) {
+  s->total++;
+  if (s->size != 10){
+    s->history[s->size] = strdup(command);
+    s->size++;
+  }
+}

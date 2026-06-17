@@ -1,0 +1,20 @@
+#pragma once
+#ifndef STACK_H
+#define STACK_H
+
+#include <stdio.h>
+#include <string.h>
+
+typedef struct Stack{
+  char* history[10];
+  int size;
+  int total;
+} Stack;
+
+void initStack(Stack* s);
+void push(Stack* s, char* command);
+char* peek(Stack* s, int index);
+void displayHist(Stack* s);
+void dealloStack(Stack* s);
+
+#endif
